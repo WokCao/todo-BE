@@ -35,6 +35,7 @@ public class WebConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                .httpBasic(withDefaults())
                 .userDetailsService(todoUserDetailService);
             
         return http.build();
