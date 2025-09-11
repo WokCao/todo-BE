@@ -1,5 +1,6 @@
 package com.example.todo.controllers;
 
+import com.example.todo.DTOs.LoginRequestDTO;
 import com.example.todo.DTOs.UserDTO;
 import com.example.todo.services.AuthService;
 import jakarta.validation.Valid;
@@ -23,6 +24,17 @@ public class AuthController {
             return ResponseEntity.ok().body("User registered successfully");
         } else {
             return ResponseEntity.badRequest().body("User registration failed");
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequestDTO) {
+        boolean isAuthenticated = authService.authenticate(loginRequestDTO.getEmail(), loginRequestDTO.getPassword());
+
+        if (isAuthenticated) {
+            return ResponseEntity.ok().body("Login successful");
+        } else {
+            return ResponseEntity.status(401).body("Invalid credentials");
         }
     }
 }

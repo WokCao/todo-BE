@@ -1,5 +1,7 @@
 package com.example.todo.configurations;
 
+import com.example.todo.services.TodoUserDetailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +20,9 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 @EnableWebSecurity
 public class WebConfig {
+    @Autowired
+    private TodoUserDetailService todoUserDetailService;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -30,8 +35,7 @@ public class WebConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .formLogin(withDefaults())
-                .httpBasic(withDefaults());
+                .userDetailsService(todoUserDetailService);
             
         return http.build();
     }
