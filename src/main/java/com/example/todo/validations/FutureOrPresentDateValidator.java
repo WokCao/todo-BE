@@ -3,16 +3,26 @@ package com.example.todo.validations;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
-public class FutureOrPresentDateValidator implements ConstraintValidator<FutureOrPresentDate, Date> {
+public class FutureOrPresentDateValidator implements ConstraintValidator<FutureOrPresentDate, LocalDateTime> {
+    private int minutesOffset;
+
     @Override
-    public boolean isValid(Date dueDate, ConstraintValidatorContext context) {
+    public void initialize(FutureOrPresentDate constraintAnnotation) {
+        this.minutesOffset = constraintAnnotation.value();
+    }
+
+    @Override
+    public boolean isValid(LocalDateTime dueDate, ConstraintValidatorContext context) {
         if (dueDate == null) {
             return true;
         }
 
-        Date currentDate = new Date();
-        return !dueDate.before(currentDate);
+        LocalDateTime now = LocalDateTime.now();
+
+        LocalDateTime minimumAllowedDate = now.plusMinutes(minutesOffset);
+
+        return !dueDate.isBefore(minimumAllowedDate);
     }
 }

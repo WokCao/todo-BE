@@ -13,4 +13,6 @@ public @interface FutureOrPresentDate {
     String message() default "Due date must be in the future or present";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
+
+    int value() default 20;
 }

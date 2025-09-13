@@ -4,10 +4,11 @@ import com.example.todo.enums.PRIORITY;
 import com.example.todo.enums.STATUS;
 import com.example.todo.validations.FutureOrPresentDate;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 public class CreateTaskDTO {
@@ -17,9 +18,12 @@ public class CreateTaskDTO {
     @Length(max = 1000, message = "Description cannot be longer than 1000 characters")
     private String description;
 
+    @NotNull(message = "Priority cannot be empty")
     private PRIORITY priority;
+
+    @NotNull(message = "Status cannot be empty")
     private STATUS status;
 
-    @FutureOrPresentDate()
-    private Date dueDate;
+    @FutureOrPresentDate(value = 60)
+    private LocalDateTime dueDate;
 }
