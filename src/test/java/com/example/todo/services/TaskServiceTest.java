@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -135,6 +137,201 @@ public class TaskServiceTest {
 
         violations = validator.validate(validDto);
         assertThat(violations).isEmpty(); // Should have no validation errors
+    }
+
+    @Test
+    void updateTask_shouldUpdateTaskSuccessfully() throws Exception {
+        setupSecurityContext();
+
+        // Arrange
+        Long taskId = 1L;
+        CreateTaskDTO updateDto = new CreateTaskDTO();
+        updateDto.setTitle("Updated Task");
+        updateDto.setDescription("Updated description");
+        updateDto.setPriority(PRIORITY.medium);
+        updateDto.setStatus(STATUS.completed);
+        updateDto.setDueDate(LocalDateTime.now().plusDays(5));
+
+        // Mock the authorization check
+        TaskModel existingTask = new TaskModel();
+        existingTask.setId(taskId);
+        existingTask.setTitle("Original Task");
+        existingTask.setDescription("Original description");
+        existingTask.setPriority(PRIORITY.high);
+        existingTask.setStatus(STATUS.inProgress);
+        existingTask.setDueDate(LocalDateTime.now().plusDays(3));
+        existingTask.setUser(mockUser);
+
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(taskRepository.findById(taskId))
+                .thenReturn(Optional.of(existingTask));
+
+        // Mock the save operation
+        TaskModel updatedTask = new TaskModel();
+        updatedTask.setId(taskId);
+        updatedTask.setTitle(updateDto.getTitle());
+        updatedTask.setDescription(updateDto.getDescription());
+        updatedTask.setPriority(updateDto.getPriority());
+        updatedTask.setStatus(updateDto.getStatus());
+        updatedTask.setDueDate(updateDto.getDueDate());
+        updatedTask.setUser(mockUser);
+
+        when(taskRepository.save(any(TaskModel.class))).thenReturn(updatedTask);
+
+        // Act
+        TaskModel result = taskService.updateTask(taskId, updateDto);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(taskId);
+        assertThat(result.getTitle()).isEqualTo("Updated Task");
+        assertThat(result.getDescription()).isEqualTo("Updated description");
+        assertThat(result.getPriority()).isEqualTo(PRIORITY.medium);
+        assertThat(result.getStatus()).isEqualTo(STATUS.completed);
+        assertThat(result.getUser().getEmail()).isEqualTo("test@example.com");
+
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, times(1)).save(any(TaskModel.class));
+    }
+
+    @Test
+    void updateTask_shouldThrowExceptionWhenTaskNotFound() throws Exception {
+        setupSecurityContext();
+
+        // Arrange
+        Long taskId = 1L;
+        CreateTaskDTO updateDto = new CreateTaskDTO();
+        updateDto.setTitle("Updated Task");
+
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(taskRepository.findById(taskId))
+                .thenReturn(Optional.empty()); // Task not found
+
+        // Act & Assert
+        assertThatThrownBy(() -> taskService.updateTask(taskId, updateDto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Task not found");
+
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, never()).save(any(TaskModel.class));
+    }
+
+    @Test
+    void updateTask_shouldThrowExceptionWhenUserIsNotAuthorized() throws Exception {
+        setupSecurityContext();
+
+        // Arrange
+        Long taskId = 1L;
+        CreateTaskDTO updateDto = new CreateTaskDTO();
+        updateDto.setTitle("Updated Task");
+
+        // Create a different user who doesn't own the task
+        UserModel differentUser = new UserModel();
+        differentUser.setId(2L);
+        differentUser.setEmail("different@example.com");
+
+        TaskModel existingTask = new TaskModel();
+        existingTask.setId(taskId);
+        existingTask.setTitle("Original Task");
+        existingTask.setUser(differentUser); // Task belongs to different user
+
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUser)); // Current user is mockUser (id=1)
+        when(taskRepository.findById(taskId))
+                .thenReturn(Optional.of(existingTask)); // Task belongs to user with id=2
+
+        // Act & Assert
+        assertThatThrownBy(() -> taskService.updateTask(taskId, updateDto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("User not authorized to update this task");
+
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, never()).save(any(TaskModel.class));
+    }
+
+    @Test
+    void deleteTask_shouldDeleteTaskSuccessfully() throws Exception {
+        setupSecurityContext();
+
+        // Arrange
+        Long taskId = 1L;
+
+        TaskModel existingTask = new TaskModel();
+        existingTask.setId(taskId);
+        existingTask.setTitle("Task to delete");
+        existingTask.setUser(mockUser);
+
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(taskRepository.findById(taskId))
+                .thenReturn(Optional.of(existingTask));
+
+        // Act
+        taskService.deleteTask(taskId);
+
+        // Assert
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, times(1)).delete(existingTask);
+    }
+
+    @Test
+    void deleteTask_shouldThrowExceptionWhenTaskNotFound() throws Exception {
+        setupSecurityContext();
+
+        // Arrange
+        Long taskId = 1L;
+
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(taskRepository.findById(taskId))
+                .thenReturn(Optional.empty()); // Task not found
+
+        // Act & Assert
+        assertThatThrownBy(() -> taskService.deleteTask(taskId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Task not found");
+
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, never()).delete(any(TaskModel.class));
+    }
+
+    @Test
+    void deleteTask_shouldThrowExceptionWhenUserIsNotAuthorized() throws Exception {
+        setupSecurityContext();
+
+        // Arrange
+        Long taskId = 1L;
+
+        // Create a different user who doesn't own the task
+        UserModel differentUser = new UserModel();
+        differentUser.setId(2L);
+        differentUser.setEmail("different@example.com");
+
+        TaskModel existingTask = new TaskModel();
+        existingTask.setId(taskId);
+        existingTask.setTitle("Task to delete");
+        existingTask.setUser(differentUser); // Task belongs to different user
+
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUser)); // Current user is mockUser (id=1)
+        when(taskRepository.findById(taskId))
+                .thenReturn(Optional.of(existingTask)); // Task belongs to user with id=2
+
+        // Act & Assert
+        assertThatThrownBy(() -> taskService.deleteTask(taskId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("User not authorized to update this task");
+
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, never()).delete(any(TaskModel.class));
     }
 }
 

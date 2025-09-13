@@ -38,4 +38,44 @@ public class TaskService {
 
         return taskRepository.save(taskModel);
     }
+
+    private TaskModel checkUserAuthorization(Long id) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        // Find the user
+        UserModel userModel = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        TaskModel taskModel = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!taskModel.getUser().getId().equals(userModel.getId())) {
+            throw new RuntimeException("User not authorized to update this task");
+        }
+
+        return taskModel;
+    }
+
+    @Transactional
+    public TaskModel updateTask(Long id, CreateTaskDTO createTaskDTO) throws Exception {
+        TaskModel taskModel = checkUserAuthorization(id);
+
+        taskModel.setTitle(createTaskDTO.getTitle());
+        taskModel.setDescription(createTaskDTO.getDescription());
+        taskModel.setPriority(createTaskDTO.getPriority());
+        taskModel.setStatus(createTaskDTO.getStatus());
+        taskModel.setDueDate(createTaskDTO.getDueDate());
+        return taskRepository.save(taskModel);
+    }
+
+    public void deleteTask(Long id) throws Exception {
+        TaskModel taskModel = checkUserAuthorization(id);
+
+        taskRepository.delete(taskModel);
+    }
+
+    public TaskModel getTask(Long id) throws Exception {
+        return checkUserAuthorization(id);
+    }
 }
