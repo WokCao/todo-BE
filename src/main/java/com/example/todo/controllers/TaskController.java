@@ -2,13 +2,17 @@ package com.example.todo.controllers;
 
 import com.example.todo.DTOs.CreateTaskDTO;
 import com.example.todo.DTOs.PagedDataDTO;
+import com.example.todo.enums.PRIORITY;
 import com.example.todo.enums.SORTDIR;
+import com.example.todo.enums.STATUS;
 import com.example.todo.models.TaskModel;
 import com.example.todo.services.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/tasks")
@@ -31,9 +35,13 @@ public class TaskController {
             @RequestParam(defaultValue = "1", required = false) int page,
             @RequestParam(defaultValue = "10", required = false) int size,
             @RequestParam(defaultValue = "id", required = false) String sortBy,
-            @RequestParam(defaultValue = "ASC", required = false) SORTDIR sortDir) {
+            @RequestParam(defaultValue = "ASC", required = false) SORTDIR sortDir,
+            @RequestParam(defaultValue = "ALL", required = false) STATUS status,
+            @RequestParam(defaultValue = "ALL", required = false) PRIORITY priority,
+            @RequestParam(defaultValue = "", required = false) LocalDateTime fromDateTime,
+            @RequestParam(defaultValue = "", required = false) LocalDateTime toDateTime) {
         try {
-            PagedDataDTO<TaskModel> taskModels = taskService.getTasksWithPaginationAndSorting(page, size, sortBy, sortDir);
+            PagedDataDTO<TaskModel> taskModels = taskService.getTasksWithPaginationAndSorting(page, size, sortBy, sortDir, status, priority, fromDateTime, toDateTime);
             return ResponseEntity.ok().body(taskModels);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -2,7 +2,9 @@ package com.example.todo.services;
 
 import com.example.todo.DTOs.CreateTaskDTO;
 import com.example.todo.DTOs.PagedDataDTO;
+import com.example.todo.enums.PRIORITY;
 import com.example.todo.enums.SORTDIR;
+import com.example.todo.enums.STATUS;
 import com.example.todo.models.TaskModel;
 import com.example.todo.models.UserModel;
 import com.example.todo.repositories.TaskRepository;
@@ -17,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Service
@@ -87,7 +90,7 @@ public class TaskService {
         return checkUserAuthorization(id);
     }
 
-    public PagedDataDTO<TaskModel> getTasksWithPaginationAndSorting(int rawPage, int rawSize, String rawSortBy, SORTDIR rawSortDir) {
+    public PagedDataDTO<TaskModel> getTasksWithPaginationAndSorting(int rawPage, int rawSize, String rawSortBy, SORTDIR rawSortDir, STATUS rawStatus, PRIORITY rawPriority, LocalDateTime fromDateTime, LocalDateTime toDateTime) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
@@ -99,9 +102,13 @@ public class TaskService {
         int size = (rawSize <= 0 || rawSize > 100) ? 10 : rawSize;
         String sortBy = validateSortBy(rawSortBy);
         SORTDIR sortDir = rawSortDir == null ? SORTDIR.ASC : rawSortDir;
+        STATUS status = rawStatus == null ? STATUS.ALL : rawStatus;
+        PRIORITY priority = rawPriority == null ? PRIORITY.ALL : rawPriority;
 
         Pageable pageable = PageRequest.of(page - 1, size, sortDir == SORTDIR.ASC ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
-        Page<TaskModel> taskPage = taskRepository.findTasksByUserEmail(userModel.getEmail(), pageable);
+        Page<TaskModel> taskPage;
+
+        taskPage = taskRepository.findTasksByUserEmailAndStatusAndPriorityBetween(userModel.getEmail(), status, priority, fromDateTime, toDateTime, pageable);
 
         return new PagedDataDTO<>(
                 taskPage.getContent(),

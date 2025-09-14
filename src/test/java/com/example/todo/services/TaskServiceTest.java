@@ -80,8 +80,8 @@ public class TaskServiceTest {
         CreateTaskDTO dto = new CreateTaskDTO();
         dto.setTitle("Test Task");
         dto.setDescription("This is a test task");
-        dto.setPriority(PRIORITY.high);
-        dto.setStatus(STATUS.inProgress);
+        dto.setPriority(PRIORITY.HIGH);
+        dto.setStatus(STATUS.IN_PROGRESS);
         dto.setDueDate(LocalDateTime.now().plusDays(7));
 
         when(userRepository.findByEmail("test@example.com"))
@@ -119,8 +119,8 @@ public class TaskServiceTest {
         CreateTaskDTO invalidDto = new CreateTaskDTO();
         invalidDto.setTitle("Test Task");
         invalidDto.setDescription("This should fail");
-        invalidDto.setPriority(PRIORITY.high);
-        invalidDto.setStatus(STATUS.inProgress);
+        invalidDto.setPriority(PRIORITY.HIGH);
+        invalidDto.setStatus(STATUS.IN_PROGRESS);
         invalidDto.setDueDate(LocalDateTime.now().plusMinutes(30)); // Only 30 minutes in future
 
         // Validate the DTO
@@ -131,8 +131,8 @@ public class TaskServiceTest {
         CreateTaskDTO validDto = new CreateTaskDTO();
         validDto.setTitle("Test Task");
         validDto.setDescription("This should pass");
-        validDto.setPriority(PRIORITY.high);
-        validDto.setStatus(STATUS.inProgress);
+        validDto.setPriority(PRIORITY.HIGH);
+        validDto.setStatus(STATUS.IN_PROGRESS);
         validDto.setDueDate(LocalDateTime.now().plusHours(2)); // 2 hours in future
 
         violations = validator.validate(validDto);
@@ -148,8 +148,8 @@ public class TaskServiceTest {
         CreateTaskDTO updateDto = new CreateTaskDTO();
         updateDto.setTitle("Updated Task");
         updateDto.setDescription("Updated description");
-        updateDto.setPriority(PRIORITY.medium);
-        updateDto.setStatus(STATUS.completed);
+        updateDto.setPriority(PRIORITY.MEDIUM);
+        updateDto.setStatus(STATUS.COMPLETED);
         updateDto.setDueDate(LocalDateTime.now().plusDays(5));
 
         // Mock the authorization check
@@ -157,8 +157,8 @@ public class TaskServiceTest {
         existingTask.setId(taskId);
         existingTask.setTitle("Original Task");
         existingTask.setDescription("Original description");
-        existingTask.setPriority(PRIORITY.high);
-        existingTask.setStatus(STATUS.inProgress);
+        existingTask.setPriority(PRIORITY.HIGH);
+        existingTask.setStatus(STATUS.IN_PROGRESS);
         existingTask.setDueDate(LocalDateTime.now().plusDays(3));
         existingTask.setUser(mockUser);
 
@@ -187,8 +187,8 @@ public class TaskServiceTest {
         assertThat(result.getId()).isEqualTo(taskId);
         assertThat(result.getTitle()).isEqualTo("Updated Task");
         assertThat(result.getDescription()).isEqualTo("Updated description");
-        assertThat(result.getPriority()).isEqualTo(PRIORITY.medium);
-        assertThat(result.getStatus()).isEqualTo(STATUS.completed);
+        assertThat(result.getPriority()).isEqualTo(PRIORITY.MEDIUM);
+        assertThat(result.getStatus()).isEqualTo(STATUS.COMPLETED);
         assertThat(result.getUser().getEmail()).isEqualTo("test@example.com");
 
         verify(userRepository, times(1)).findByEmail("test@example.com");
