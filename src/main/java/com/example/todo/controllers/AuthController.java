@@ -3,9 +3,12 @@ package com.example.todo.controllers;
 import com.example.todo.DTOs.LoginRequestDTO;
 import com.example.todo.DTOs.UserDTO;
 import com.example.todo.services.AuthService;
+import com.example.todo.services.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     @Autowired
     private AuthService authService;
+    @Autowired
+    private JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserDTO userDTO) {
@@ -32,7 +37,8 @@ public class AuthController {
         boolean isAuthenticated = authService.authenticate(loginRequestDTO.getEmail(), loginRequestDTO.getPassword());
 
         if (isAuthenticated) {
-            return ResponseEntity.ok().body("Login successful");
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            return ResponseEntity.ok().body(jwtService.generateToken(authentication));
         } else {
             return ResponseEntity.status(401).body("Invalid credentials");
         }

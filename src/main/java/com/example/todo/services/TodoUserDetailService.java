@@ -1,13 +1,16 @@
 package com.example.todo.services;
 
+import com.example.todo.configurations.TodoUserDetails;
 import com.example.todo.models.UserModel;
 import com.example.todo.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.userdetails.UserDetailsService;
+
+import java.util.List;
 
 @Service
 public class TodoUserDetailService implements UserDetailsService {
@@ -24,10 +27,6 @@ public class TodoUserDetailService implements UserDetailsService {
         UserModel user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        return User.builder()
-                .username(user.getEmail())
-                .password(user.getPassword())
-                .roles("USER")
-                .build();
+        return new TodoUserDetails(user.getId(), user.getEmail(), user.getPassword(), List.of(new SimpleGrantedAuthority("USER")));
     }
 }
