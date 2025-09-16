@@ -44,4 +44,6 @@ public interface TaskRepository extends JpaRepository<TaskModel, Long>, JpaSpeci
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }
+
+    List<TaskModel> findByDueDateBetween(LocalDateTime fromDateTime, LocalDateTime toDateTime);
 }
