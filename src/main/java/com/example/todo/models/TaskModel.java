@@ -4,10 +4,7 @@ import com.example.todo.enums.PRIORITY;
 import com.example.todo.enums.STATUS;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +15,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class TaskModel extends BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

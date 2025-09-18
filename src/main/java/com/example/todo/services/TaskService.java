@@ -14,12 +14,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -130,5 +132,19 @@ public class TaskService {
         Set<String> allowedSortFields = Set.of("id", "title", "priority", "status", "dueDate");
 
         return allowedSortFields.contains(sortBy) ? sortBy : "id";
+    }
+
+    @Scheduled(fixedRate = 60 * 60 * 1000)
+    public void updateOverdueTasks() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Example: mark tasks as OVERDUE if past due date and still TODO or IN_PROGRESS
+        List<TaskModel> tasks = taskRepository.findByStatusAndDueDateBefore(List.of(STATUS.TODO, STATUS.IN_PROGRESS), now);
+
+        for (TaskModel task : tasks) {
+            task.setStatus(STATUS.OVERDUE);
+        }
+
+        taskRepository.saveAll(tasks);
     }
 }

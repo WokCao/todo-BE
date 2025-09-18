@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -46,4 +47,10 @@ public interface TaskRepository extends JpaRepository<TaskModel, Long>, JpaSpeci
     }
 
     List<TaskModel> findByDueDateBetween(LocalDateTime fromDateTime, LocalDateTime toDateTime);
+
+    @Query("SELECT t FROM TaskModel t WHERE t.status IN :status AND t.dueDate < :localDateTime")
+    List<TaskModel> findByStatusAndDueDateBefore(List<STATUS> status, LocalDateTime localDateTime);
+
+    @Query("SELECT t FROM TaskModel t WHERE t.user.email = :email AND t.status IN :status AND MONTH(t.dueDate) = :month AND YEAR(t.dueDate) = :year")
+    List<TaskModel> findByUserEmailAndStatusAndMonthAndYear(String email, List<STATUS> status, int month, int year);
 }

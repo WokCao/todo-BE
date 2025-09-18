@@ -2,23 +2,29 @@ package com.example.todo.controllers;
 
 import com.example.todo.DTOs.CreateTaskDTO;
 import com.example.todo.DTOs.PagedDataDTO;
+import com.example.todo.DTOs.SuggestionDTO;
 import com.example.todo.enums.PRIORITY;
 import com.example.todo.enums.SORTDIR;
 import com.example.todo.enums.STATUS;
 import com.example.todo.models.TaskModel;
+import com.example.todo.services.OpenRouterService;
 import com.example.todo.services.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/tasks")
 public class TaskController {
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private OpenRouterService openRouterService;
 
     @PostMapping
     public ResponseEntity<?> createTask(@Valid @RequestBody CreateTaskDTO createTaskDTO) {
@@ -42,6 +48,7 @@ public class TaskController {
             @RequestParam(defaultValue = "", required = false) LocalDateTime toDateTime) {
         try {
             PagedDataDTO<TaskModel> taskModels = taskService.getTasksWithPaginationAndSorting(page, size, sortBy, sortDir, status, priority, fromDateTime, toDateTime);
+            taskService.updateOverdueTasks();
             return ResponseEntity.ok().body(taskModels);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -74,6 +81,17 @@ public class TaskController {
             TaskModel taskModel = taskService.getTask(id);
             return ResponseEntity.ok().body(taskModel);
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/suggestion")
+    public ResponseEntity<?> getSuggestion(@RequestBody String question) {
+        try {
+            SuggestionDTO result = openRouterService.askQuestionWithRateLimit(question);
+            return ResponseEntity.ok().body(Objects.requireNonNullElse(result, "Cannot answer this question"));
+        } catch (Exception e) {
+            if (Objects.equals(e.getMessage(), "Rate limit exceeded")) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Rate limit exceeded");
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
